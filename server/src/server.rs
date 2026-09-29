@@ -633,12 +633,32 @@ fn has_extension(path: &Path, exts: &[&str]) -> bool {
         .is_some_and(|e| exts.contains(&e))
 }
 
+/// Widens an empty span so the editor has something to underline and hover:
+/// the next character if there is one on the line, otherwise the last
+/// non-blank line before it (e.g. for "missing `%%`" at end of file).
+fn visible_span(text: &str, span: &Span) -> Span {
+    if !span.is_empty() {
+        return span.clone();
+    }
+    if let Some(c) = text[span.start..]
+        .chars()
+        .next()
+        .filter(|&c| c != '\n' && c != '\r')
+    {
+        return span.start..span.start + c.len_utf8();
+    }
+    let before = text[..span.start].trim_end();
+    let line_start = before.rfind('\n').map_or(0, |i| i + 1);
+    let indent = before[line_start..].len() - before[line_start..].trim_start().len();
+    line_start + indent..before.len()
+}
+
 fn diagnostics(doc: &Document) -> Vec<lsp_types::Diagnostic> {
     doc.analysis
         .diagnostics
         .iter()
         .map(|d| lsp_types::Diagnostic {
-            range: doc.range(&d.span),
+            range: doc.range(&visible_span(&doc.text, &d.span)),
             severity: Some(match d.severity {
                 Severity::Error => DiagnosticSeverity::ERROR,
                 Severity::Warning => DiagnosticSeverity::WARNING,
@@ -660,4 +680,25 @@ fn publish_message(uri: Url, diagnostics: Vec<lsp_types::Diagnostic>) -> Message
             version: None,
         },
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::visible_span;
+
+    #[test]
+    fn empty_spans_become_visible() {
+        let text = "%x S\n  last line  \n\n";
+        // At end of file: the last non-blank line, without its indentation.
+        assert_eq!(
+            &text[visible_span(text, &(text.len()..text.len()))],
+            "last line"
+        );
+        // Mid-line: the next character.
+        assert_eq!(&text[visible_span(text, &(1..1))], "x");
+        // Non-empty spans are unchanged.
+        assert_eq!(visible_span(text, &(0..2)), 0..2);
+        // Empty file: nothing to widen to.
+        assert_eq!(visible_span("", &(0..0)), 0..0);
+    }
 }
