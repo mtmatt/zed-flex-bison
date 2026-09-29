@@ -1,0 +1,10 @@
+name = "Flex"
+grammar = "flex"
+path_suffixes = ["l", "ll", "lex", "flex"]
+brackets = [
+  { start = "{", end = "}", close = true, newline = true },
+  { start = "[", end = "]", close = true, newline = false },
+  { start = "(", end = ")", close = true, newline = false },
+  { start = "\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
+]
+word_characters = ["_", "-"]

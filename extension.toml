@@ -1,0 +1,24 @@
+id = "flex-bison"
+name = "Flex & Bison"
+version = "0.1.0"
+schema_version = 1
+authors = ["mtmatt <mtmattqq@gmail.com>"]
+description = "Flex (.l) and Bison (.y) support: syntax highlighting plus a language server with diagnostics, go-to-definition, references, hover, completion and rename."
+repository = "https://github.com/mtmatt/zed-flex-bison"
+
+[grammars.bison]
+# Fork of gitlab.com/btuin2/tree-sitter-bison that builds for WASI (no <signal.h>).
+repository = "https://github.com/fanwenlin/tree-sitter-bison"
+rev = "ec9b9bda4314d5d60f00502dd1357031141744b8"
+
+[grammars.flex]
+repository = "https://github.com/m4rch3n1ng/tree-sitter-flex"
+rev = "ba7ed75dd3ef98c9046e76526f0ed3a18f3dcb63"
+
+[language_servers.flex-bison-lsp]
+name = "Flex/Bison LSP"
+languages = ["Bison", "Flex"]
+
+[language_servers.flex-bison-lsp.language_ids]
+"Bison" = "bison"
+"Flex" = "flex"
